@@ -21,11 +21,9 @@ class SlotAttentionVideo(nn.Module):
         self.mlp_hidden_size = mlp_hidden_size
         self.epsilon = epsilon
 
-        # parameters for Gaussian initialization (shared by all slots).
-        self.slot_mu = nn.Parameter(torch.Tensor(1, 1, slot_size))
-        self.slot_log_sigma = nn.Parameter(torch.Tensor(1, 1, slot_size))
-        nn.init.xavier_uniform_(self.slot_mu)
-        nn.init.xavier_uniform_(self.slot_log_sigma)
+        # parameters for Gaussian initialization (one for each slot).
+        self.slot_init = nn.Parameter(torch.Tensor(1, num_slots, slot_size))
+        nn.init.xavier_uniform_(self.slot_init)
 
         # norms
         self.norm_inputs = nn.LayerNorm(input_size)
@@ -49,8 +47,7 @@ class SlotAttentionVideo(nn.Module):
         B, T, num_inputs, input_size = inputs.size()
 
         # initialize slots
-        slots = inputs.new_empty(B, self.num_slots, self.slot_size).normal_()
-        slots = self.slot_mu + torch.exp(self.slot_log_sigma) * slots
+        slots = self.slot_init.expand(B, -1, -1).contiguous()
 
         # setup key and value
         inputs = self.norm_inputs(inputs)

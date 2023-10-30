@@ -10,26 +10,17 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class GlobVideoDataset(Dataset):
-    def __init__(self, root, phase, img_size, ep_len=3, img_glob='*.png'):
+    def __init__(self, root, img_size, ep_len=3, img_glob='*.png'):
         self.root = root
         self.img_size = img_size
         self.total_dirs = sorted(glob.glob(root))
         self.ep_len = ep_len
 
-        if phase == 'train':
-            self.total_dirs = self.total_dirs[:int(len(self.total_dirs) * 0.7)]
-        elif phase == 'val':
-            self.total_dirs = self.total_dirs[int(len(self.total_dirs) * 0.7):int(len(self.total_dirs) * 0.85)]
-        elif phase == 'test':
-            self.total_dirs = self.total_dirs[int(len(self.total_dirs) * 0.85):]
-        else:
-            pass
-
         # chunk into episodes
         self.episodes = []
         for dir in self.total_dirs:
             frame_buffer = []
-            image_paths = sorted(glob.glob(os.path.join(dir, img_glob)))
+            image_paths = sorted(glob.glob(os.path.join(dir, img_glob)), key=lambda x: int(os.path.split(x)[-1][:-4]))
             for path in image_paths:
                 frame_buffer.append(path)
                 if len(frame_buffer) == self.ep_len:

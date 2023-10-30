@@ -72,8 +72,9 @@ log_dir = os.path.join(args.log_path, datetime.today().isoformat())
 writer = SummaryWriter(log_dir)
 writer.add_text('hparams', arg_str)
 
-train_dataset = GlobVideoDataset(root=args.data_path, phase='train', img_size=args.image_size, ep_len=args.ep_len, img_glob='????????_image.png')
-val_dataset = GlobVideoDataset(root=args.data_path, phase='val', img_size=args.image_size, ep_len=args.ep_len, img_glob='????????_image.png')
+train_dataset = GlobVideoDataset(root=os.path.join(args.data_path, 'train/*'), img_size=args.image_size,
+                                 ep_len=args.ep_len)
+val_dataset = GlobVideoDataset(root=os.path.join(args.data_path, 'val/*'), img_size=args.image_size, ep_len=args.ep_len)
 
 loader_kwargs = {
     'batch_size': args.batch_size,
@@ -247,7 +248,7 @@ for epoch in range(start_epoch, args.epochs):
             if global_step < args.steps:
                 torch.save(model.module.state_dict() if args.use_dp else model.state_dict(), os.path.join(log_dir, f'best_model_until_{args.steps}_steps.pt'))
 
-            if 50 <= epoch:
+            if 5 <= epoch:
                 gen_video = (model.module if args.use_dp else model).reconstruct_autoregressive(video[:8])
                 frames = visualize(video, recon, gen_video, attns, N=8)
                 writer.add_video('VAL_recons/epoch={:03}'.format(epoch + 1), frames)
